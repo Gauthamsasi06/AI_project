@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignalFlow — Traffic Intelligence</title>
+</head>
+<body>
+<script>
+/* SignalFlow: vanilla JavaScript only. All page markup and styling are created here. */
+const style = document.createElement("style");
+style.textContent = `
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+:root{--bg:#070a12;--panel:#0d1321;--panel2:#101a2b;--line:#1d2b42;--text:#eef5ff;--muted:#8796ad;--cyan:#4df7ff;--pink:#ff3ea5;--lime:#b8ff4d;--amber:#ffcb57;--red:#ff4f68}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 78% -15%,#142848 0,transparent 38%),var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh}button,select{font:inherit}button{cursor:pointer}
+.shell{max-width:1480px;margin:auto;padding:24px 30px 38px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;padding-bottom:22px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:13px}.brand-mark{width:42px;height:42px;border:1px solid #31506a;border-radius:13px;display:grid;place-items:center;background:#0e1c2b;box-shadow:0 0 24px #4df7ff15}.mini-light{width:12px;height:27px;border-radius:10px;background:linear-gradient(var(--red) 0 30%,var(--amber) 33% 64%,var(--lime) 67%);box-shadow:0 0 12px #4df7ff44}
+.brand h1{font-size:19px;letter-spacing:.04em;margin:0}.brand h1 span{color:var(--cyan)}.brand p{margin:3px 0 0;font-size:10px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+.top-actions{display:flex;align-items:center;gap:12px}.live-pill{display:flex;align-items:center;gap:8px;color:var(--lime);border:1px solid #b8ff4d35;background:#b8ff4d0b;border-radius:30px;padding:9px 13px;font:11px 'Space Mono',monospace;letter-spacing:.08em}.dot{width:7px;height:7px;background:var(--lime);border-radius:50%;box-shadow:0 0 12px var(--lime);animation:pulse 1.5s infinite}@keyframes pulse{50%{opacity:.35;box-shadow:0 0 2px var(--lime)}}
+select,.ghost-btn{background:#101a29;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:12px}.ghost-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.hero{display:flex;justify-content:space-between;align-items:flex-end;margin:28px 0 22px;gap:20px}.eyebrow{color:var(--cyan);font:10px 'Space Mono',monospace;letter-spacing:.19em;text-transform:uppercase}.hero h2{font-size:clamp(26px,3vw,40px);letter-spacing:-.045em;margin:8px 0 7px;line-height:1.08}.hero h2 em{font-style:normal;color:var(--cyan)}.hero p{margin:0;color:var(--muted);font-size:13px;max-width:560px;line-height:1.6}.updated{font:10px 'Space Mono',monospace;color:var(--muted);text-align:right;white-space:nowrap}.updated strong{display:block;color:#d6e3f7;font-size:12px;margin-top:6px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:16px}.stat{background:linear-gradient(145deg,#111c2d,#0a101c);border:1px solid var(--line);border-radius:15px;padding:17px 18px;position:relative;overflow:hidden}.stat:after{content:'';position:absolute;width:90px;height:90px;right:-35px;top:-40px;border-radius:50%;background:var(--glow,#4df7ff);filter:blur(45px);opacity:.12}.stat-label{font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:space-between}.stat-value{font-size:29px;font-weight:700;letter-spacing:-.04em;margin:10px 0 4px}.stat-foot{font-size:10px;color:var(--muted)}.positive{color:var(--lime)}.warning{color:var(--amber)}.cyan{color:var(--cyan)}.pink{color:var(--pink)}
+.main-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(310px,.9fr);gap:16px}.card{background:linear-gradient(150deg,#0e1625,#0a101b);border:1px solid var(--line);border-radius:16px;overflow:hidden}.card-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 20px;border-bottom:1px solid var(--line)}.card-title{font-size:14px;font-weight:600}.card-sub{font-size:10px;color:var(--muted);margin-top:5px}.tag{font:9px 'Space Mono',monospace;letter-spacing:.08em;border:1px solid #4df7ff35;color:var(--cyan);padding:6px 8px;border-radius:6px;white-space:nowrap}
+.map{height:340px;position:relative;overflow:hidden;background:#0a1220}.map-photo{position:absolute;inset:0;background:linear-gradient(90deg,#07101b88,#07101b40),url('https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1600&q=85') center 54%/cover;filter:saturate(.7) brightness(.55)}.map:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,#08101be8,transparent 45%),linear-gradient(90deg,#09121a55,transparent 50%);z-index:1}
+.road{position:absolute;height:7px;border-radius:20px;background:#29394c;box-shadow:0 0 0 2px #101b2a,0 0 15px #4df7ff14;z-index:2;transform-origin:left center}.road:after{content:'';position:absolute;left:0;right:0;top:3px;border-top:1px dashed #8293a777}.road.r1{width:120%;left:-5%;top:58%;transform:rotate(-13deg)}.road.r2{width:90%;left:18%;top:14%;transform:rotate(67deg)}.road.r3{width:90%;left:3%;top:78%;transform:rotate(-43deg)}.road.r4{width:80%;left:36%;top:38%;transform:rotate(28deg)}
+.map-label{position:absolute;z-index:3;font:9px 'Space Mono',monospace;color:#dbeaffc9;background:#09111cbb;border:1px solid #64748b55;padding:5px 7px;border-radius:4px;letter-spacing:.04em}.label-a{top:22%;left:12%}.label-b{top:64%;left:51%}.label-c{top:32%;right:9%}
+.route{position:absolute;height:4px;border-radius:5px;z-index:4;filter:drop-shadow(0 0 6px currentColor);transform-origin:left center}.route.one{width:36%;left:17%;top:53%;transform:rotate(-14deg);background:var(--lime);color:var(--lime)}.route.two{width:27%;left:50%;top:45%;transform:rotate(29deg);background:var(--pink);color:var(--pink)}.route.three{width:26%;left:38%;top:69%;transform:rotate(-42deg);background:var(--cyan);color:var(--cyan)}
+.signal{position:absolute;z-index:6;width:27px;padding:5px 4px;background:#080d15;border:1px solid #42516a;border-radius:9px;display:flex;flex-direction:column;gap:4px;box-shadow:0 0 20px #0009}.bulb{height:6px;width:6px;border-radius:50%;margin:auto;background:#293343}.bulb.red.on{background:var(--red);box-shadow:0 0 10px var(--red)}.bulb.yellow.on{background:var(--amber);box-shadow:0 0 10px var(--amber)}.bulb.green.on{background:var(--lime);box-shadow:0 0 10px var(--lime)}.s1{left:31%;top:39%}.s2{left:61%;top:51%}.s3{left:48%;top:23%}.map-legend{position:absolute;z-index:5;left:17px;bottom:15px;display:flex;gap:13px;flex-wrap:wrap}.legend{display:flex;gap:6px;align-items:center;font-size:9px;color:#d3dced;background:#08101bd9;padding:7px 9px;border:1px solid #2a394c;border-radius:6px}.legend i{display:block;width:7px;height:7px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}
+.map-top{position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;z-index:5}.map-chip{font:9px 'Space Mono',monospace;background:#08101bdc;border:1px solid #304158;padding:8px 10px;border-radius:7px;color:#dceaff}
+.under-map{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 17px}.route-card{background:#0c1523;border:1px solid #1c2b40;border-radius:10px;padding:12px}.route-top{display:flex;justify-content:space-between;font-size:11px;gap:8px}.route-time{font:10px 'Space Mono',monospace;color:var(--lime)}.route-meta{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:8px}.bar{height:4px;border-radius:5px;background:#1d2a3c;margin-top:10px;overflow:hidden}.bar span{display:block;height:100%;width:60%;background:var(--bar,var(--cyan));border-radius:5px;box-shadow:0 0 8px var(--bar,var(--cyan))}
+.side-stack{display:flex;flex-direction:column;gap:16px}.signal-panel{padding:18px 20px}.signal-display{display:flex;align-items:center;gap:17px;padding:17px;background:#080e18;border:1px solid #1b2a3f;border-radius:12px;margin-top:15px}.big-signal{width:54px;padding:9px 8px;background:#02050a;border:1px solid #33445c;border-radius:15px;display:flex;flex-direction:column;gap:8px;box-shadow:0 0 24px #000}.big-signal .bulb{width:18px;height:18px;background:#202a37}.big-signal .bulb.red.on{background:var(--red);box-shadow:0 0 16px var(--red)}.big-signal .bulb.yellow.on{background:var(--amber);box-shadow:0 0 16px var(--amber)}.big-signal .bulb.green.on{background:var(--lime);box-shadow:0 0 16px var(--lime)}.signal-info h3{font-size:14px;margin:0 0 5px}.signal-info p{font-size:11px;color:var(--muted);margin:0;line-height:1.5}.countdown{font:28px 'Space Mono',monospace;color:var(--lime);margin-top:9px}.countdown small{font-size:10px;color:var(--muted)}
+.prediction{padding:18px 20px}.chart{height:126px;display:flex;align-items:flex-end;gap:8px;padding:12px 0 0;border-bottom:1px solid var(--line);background:repeating-linear-gradient(to bottom,transparent 0,transparent 30px,#1b293a 31px)}.chart-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:8px}.chart-bar{width:100%;max-width:26px;min-height:8px;border-radius:5px 5px 0 0;background:linear-gradient(0deg,#155b73,var(--cyan));box-shadow:0 0 13px #4df7ff18;transition:height .6s}.chart-label{font:9px 'Space Mono',monospace;color:var(--muted);padding-bottom:8px}.chart-foot{display:flex;justify-content:space-between;margin-top:12px;font-size:10px;color:var(--muted)}.chart-foot strong{color:var(--cyan);font-weight:600}
+.incidents{margin-top:16px}.incident-list{padding:5px 20px 14px}.incident{display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:1px solid #172338}.incident:last-child{border:0}.incident-icon{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:#ffcb5712;border:1px solid #ffcb572b;color:var(--amber);font-size:14px}.incident-icon.p{background:#ff3ea512;border-color:#ff3ea52b;color:var(--pink)}.incident-icon.c{background:#4df7ff12;border-color:#4df7ff2b;color:var(--cyan)}.incident-text{flex:1}.incident-text strong{display:block;font-size:11px;font-weight:600}.incident-text small{display:block;color:var(--muted);font-size:10px;margin-top:4px}.severity{font:9px 'Space Mono',monospace;color:var(--amber)}
+.footer{display:flex;justify-content:space-between;gap:15px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line);font-size:10px;color:#63738b}.footer b{color:#aab8cc;font-weight:500}.toast{position:fixed;right:24px;bottom:24px;background:#101e2d;border:1px solid #4df7ff66;color:var(--text);padding:13px 17px;border-radius:10px;box-shadow:0 10px 40px #0008;z-index:20;font-size:12px;opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none}.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:1000px){.main-grid{grid-template-columns:1fr}.side-stack{display:grid;grid-template-columns:1fr 1fr}.incidents{grid-column:1/-1}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.shell{padding:16px}.topbar,.hero{align-items:flex-start;flex-direction:column}.top-actions{width:100%;justify-content:space-between}.hero{margin-top:23px}.updated{text-align:left}.stats{gap:9px}.stat{padding:13px}.stat-value{font-size:24px}.main-grid{display:block}.side-stack{display:flex;margin-top:15px}.map{height:300px}.under-map{grid-template-columns:1fr}.footer{flex-direction:column}.brand h1{font-size:17px}}
+`;
+document.head.appendChild(style);
+
+document.body.innerHTML = `
+<div class="shell">
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark"><div class="mini-light"></div></div><div><h1>SIGNAL<span>FLOW</span></h1><p>Urban traffic intelligence</p></div></div>
+    <div class="top-actions">
+      <div class="live-pill"><span class="dot"></span> LIVE MONITORING</div>
+      <select id="citySelect" aria-label="Select city"><option>Chennai, IN</option><option>Bengaluru, IN</option><option>Mumbai, IN</option><option>Hyderabad, IN</option></select>
+      <button class="ghost-btn" id="refreshBtn">↻ Refresh data</button>
+    </div>
+  </header>
+  <section class="hero">
+    <div><div class="eyebrow">● &nbsp; AI-powered traffic operations</div><h2>See the flow.<br><em>Predict the gridlock.</em></h2><p>One live-style control room for congestion, signal timing and smarter route decisions across the city.</p></div>
+    <div class="updated">SYSTEM STATUS <strong><span class="positive">● OPTIMAL</span> &nbsp; / &nbsp; <span id="clock">--:--:--</span></strong><div style="margin-top:7px">LAST SYNC <span id="syncTime">just now</span></div></div>
+  </section>
+  <section class="stats">
+    <div class="stat" style="--glow:var(--cyan)"><div class="stat-label">Network congestion <span class="cyan">↗</span></div><div class="stat-value" id="congestion">34<span style="font-size:15px">%</span></div><div class="stat-foot"><span class="positive">↓ 8.2%</span> vs. previous hour</div></div>
+    <div class="stat" style="--glow:var(--lime)"><div class="stat-label">Average speed <span class="positive">↗</span></div><div class="stat-value" id="speed">31.8 <span style="font-size:14px">km/h</span></div><div class="stat-foot"><span class="positive">+4.6 km/h</span> city-wide</div></div>
+    <div class="stat" style="--glow:var(--pink)"><div class="stat-label">Vehicles tracked <span class="pink">◉</span></div><div class="stat-value" id="vehicles">24,681</div><div class="stat-foot">Across <span class="cyan">128 intersections</span></div></div>
+    <div class="stat" style="--glow:var(--amber)"><div class="stat-label">Prediction confidence <span class="warning">✳</span></div><div class="stat-value">94.7<span style="font-size:15px">%</span></div><div class="stat-foot">AI forecast · next 30 minutes</div></div>
+  </section>
+  <section class="main-grid">
+    <div>
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Traffic network overview</div><div class="card-sub">Live-style camera imagery + predicted flow overlays</div></div><span class="tag">● MAP FEED ACTIVE</span></div>
+        <div class="map">
+          <div class="map-photo"></div><div class="road r1"></div><div class="road r2"></div><div class="road r3"></div><div class="road r4"></div>
+          <div class="route one"></div><div class="route two"></div><div class="route three"></div>
+          <div class="map-top"><span class="map-chip">◉ &nbsp; CITY GRID / OVERVIEW</span><span class="map-chip" id="mapTime">SYNC 11:00:00</span></div>
+          <span class="map-label label-a">ANNA SALAI</span><span class="map-label label-b">T. NAGAR</span><span class="map-label label-c">OMR CORRIDOR</span>
+          <div class="signal s1"><i class="bulb red"></i><i class="bulb yellow"></i><i class="bulb green on"></i></div>
+          <div class="signal s2"><i class="bulb red on"></i><i class="bulb yellow"></i><i class="bulb green"></i></div>
+          <div class="signal s3"><i class="bulb red"></i><i class="bulb yellow on"></i><i class="bulb green"></i></div>
+          <div class="map-legend"><span class="legend"><i style="--c:var(--lime)"></i> CLEAR</span><span class="legend"><i style="--c:var(--cyan)"></i> MODERATE</span><span class="legend"><i style="--c:var(--pink)"></i> HEAVY</span><span class="legend"><i style="--c:var(--amber)"></i> SIGNAL</span></div>
+        </div>
+        <div class="under-map">
+          <div class="route-card"><div class="route-top"><strong>Anna Salai → Guindy</strong><span class="route-time">18 min</span></div><div class="route-meta"><span>4.8 km · Clear</span><span class="positive">−6 min</span></div><div class="bar"><span style="width:32%;--bar:var(--lime)"></span></div></div>
+          <div class="route-card"><div class="route-top"><strong>T. Nagar → Adyar</strong><span class="route-time" style="color:var(--amber)">26 min</span></div><div class="route-meta"><span>6.2 km · Moderate</span><span class="warning">+3 min</span></div><div class="bar"><span style="width:62%;--bar:var(--amber)"></span></div></div>
+          <div class="route-card"><div class="route-top"><strong>OMR → Sholinganallur</strong><span class="route-time" style="color:var(--pink)">34 min</span></div><div class="route-meta"><span>8.1 km · Heavy</span><span class="pink">+11 min</span></div><div class="bar"><span style="width:84%;--bar:var(--pink)"></span></div></div>
+        </div>
+      </div>
+      <div class="card incidents">
+        <div class="card-head"><div><div class="card-title">Traffic events & alerts</div><div class="card-sub">Priority events detected by the monitoring layer</div></div><span class="tag" id="alertCount">03 ACTIVE</span></div>
+        <div class="incident-list">
+          <div class="incident"><div class="incident-icon p">↗</div><div class="incident-text"><strong>Heavy congestion detected</strong><small>OMR Corridor · Perungudi junction · 4 min ago</small></div><span class="severity" style="color:var(--pink)">HIGH</span></div>
+          <div class="incident"><div class="incident-icon">⇄</div><div class="incident-text"><strong>Signal timing optimization</strong><small>Mount Road · Adaptive cycle recommendation</small></div><span class="severity">MEDIUM</span></div>
+          <div class="incident"><div class="incident-icon c">✓</div><div class="incident-text"><strong>Flow restored</strong><small>Velachery Main Road · Queue length normal</small></div><span class="severity" style="color:var(--lime)">RESOLVED</span></div>
+        </div>
+      </div>
+    </div>
+    <aside class="side-stack">
+      <div class="card signal-panel">
+        <div class="card-head" style="padding:0 0 15px;border:0"><div><div class="card-title">Adaptive signal control</div><div class="card-sub">Intersection 04 · Anna Salai</div></div><span class="tag">AUTO</span></div>
+        <div class="signal-display"><div class="big-signal" id="bigSignal"><i class="bulb red"></i><i class="bulb yellow"></i><i class="bulb green on"></i></div><div class="signal-info"><h3 id="signalState">GREEN PHASE</h3><p id="signalHint">Traffic flow is moving smoothly.<br>Next phase in</p><div class="countdown"><span id="countdown">18</span><small> SEC</small></div></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:15px;font-size:10px;color:var(--muted)"><span>QUEUE LENGTH <b style="color:var(--text);margin-left:5px" id="queue">12 vehicles</b></span><span>EFFICIENCY <b class="positive" style="margin-left:5px">+16%</b></span></div>
+      </div>
+      <div class="card prediction">
+        <div class="card-head" style="padding:0 0 13px;border:0"><div><div class="card-title">Congestion forecast</div><div class="card-sub">Predicted network load · next 6 hours</div></div><span class="tag">AI MODEL</span></div>
+        <div class="chart" id="chart"></div>
+        <div class="chart-foot"><span>Forecast trend</span><strong id="forecastStatus">↘ easing ahead</strong></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Prediction insights</div><div class="card-sub">What the model expects next</div></div></div>
+        <div style="padding:16px 20px;display:grid;gap:14px">
+          <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:var(--lime);font-size:16px">↘</span><div><strong style="font-size:11px">Congestion easing</strong><div style="color:var(--muted);font-size:10px;margin-top:4px;line-height:1.5">Expected 12% reduction on key routes in 30 min.</div></div></div>
+          <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:var(--amber);font-size:16px">◷</span><div><strong style="font-size:11px">Peak window approaching</strong><div style="color:var(--muted);font-size:10px;margin-top:4px;line-height:1.5">Prepare for elevated demand between 17:30–19:00.</div></div></div>
+          <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:var(--cyan);font-size:16px">⌁</span><div><strong style="font-size:11px">Suggested intervention</strong><div style="color:var(--muted);font-size:10px;margin-top:4px;line-height:1.5">Extend green phase by 8 seconds at OMR junction.</div></div></div>
+        </div>
+      </div>
+    </aside>
+  </section>
+  <footer class="footer"><span><b>SIGNALFLOW</b> &nbsp; / &nbsp; TRAFFIC PREDICTION CONSOLE</span><span>DEMO UI · Values are simulated; not an operational traffic service.</span><span>V 1.0.4 &nbsp; · &nbsp; VANILLA JS</span></footer>
+</div><div class="toast" id="toast">Traffic data refreshed</div>`;
+
+const chartData = [{t:"12:00",v:38},{t:"13:00",v:31},{t:"14:00",v:27},{t:"15:00",v:42},{t:"16:00",v:57},{t:"17:00",v:81},{t:"18:00",v:92},{t:"19:00",v:65}];
+const chart = document.getElementById("chart");
+function renderChart(data=chartData){
+  chart.innerHTML = data.map((d,i)=>`<div class="chart-col"><div class="chart-bar" title="${d.v}% congestion" style="height:${d.v}%;${d.v>75?'background:linear-gradient(0deg,#77294d,var(--pink));':''}"></div><div class="chart-label">${d.t}</div></div>`).join("");
+}
+renderChart();
+let seconds = 18, phase = 2;
+const phases = [
+ {name:"RED PHASE",hint:"Vehicles are stopping safely.",color:"red",duration:26,queue:24},
+ {name:"AMBER PHASE",hint:"Prepare for the next traffic phase.",color:"yellow",duration:4,queue:18},
+ {name:"GREEN PHASE",hint:"Traffic flow is moving smoothly.",color:"green",duration:18,queue:12}
+];
+function setPhase(){
+ const p=phases[phase]; seconds=p.duration;
+ document.getElementById("signalState").textContent=p.name;
+ document.getElementById("signalHint").innerHTML=p.hint+"<br>Next phase in";
+ document.getElementById("countdown").textContent=seconds;
+ document.getElementById("queue").textContent=p.queue+" vehicles";
+ document.querySelectorAll("#bigSignal .bulb").forEach(b=>b.classList.remove("on"));
+ document.querySelector("#bigSignal .bulb."+p.color).classList.add("on");
+}
+setInterval(()=>{
+ const now=new Date();
+ document.getElementById("clock").textContent=now.toLocaleTimeString("en-GB");
+ document.getElementById("mapTime").textContent="SYNC "+now.toLocaleTimeString("en-GB");
+ seconds--;
+ if(seconds<=0){phase=(phase+1)%phases.length;setPhase()} else document.getElementById("countdown").textContent=seconds;
+},1000);
+setPhase();
+function toast(message){const el=document.getElementById("toast");el.textContent=message;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2500)}
+document.getElementById("refreshBtn").addEventListener("click",()=>{
+ const congestion=28+Math.floor(Math.random()*20), speed=(28+Math.random()*8).toFixed(1), vehicles=(23000+Math.floor(Math.random()*4000)).toLocaleString("en-US");
+ document.getElementById("congestion").innerHTML=congestion+'<span style="font-size:15px">%</span>';
+ document.getElementById("speed").innerHTML=speed+' <span style="font-size:14px">km/h</span>';
+ document.getElementById("vehicles").textContent=vehicles;
+ document.getElementById("syncTime").textContent="just now";
+ const randomized=chartData.map(d=>({...d,v:Math.max(15,Math.min(96,d.v+Math.floor(Math.random()*17)-8))}));
+ renderChart(randomized);
+ document.getElementById("forecastStatus").textContent=congestion>40?"↗ rising demand":"↘ easing ahead";
+ toast("Demo traffic values refreshed");
+});
+document.getElementById("citySelect").addEventListener("change",e=>{
+ const city=e.target.value;
+ document.querySelector(".map-chip").textContent="◉  "+city.toUpperCase()+" / OVERVIEW";
+ document.querySelector(".card-sub").textContent="Live-style camera imagery + predicted flow overlays";
+ toast("Switched dashboard view to "+city+" · demo data");
+});
+</script>
+</body>
+</html>
